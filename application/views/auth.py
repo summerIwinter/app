@@ -9,60 +9,65 @@
 """
 
 """
-from flask import Blueprint, request, session 
+from flask import Blueprint, request, jsonify, url_for, abort, g
 from ..models import User
 from ..database import db_session
 from .. import login_manager
-from flask_login import login_user, logout_user, current_user, login_required
 
 auth = Blueprint('auth',__name__)
 
-SUCCESS = {"state":0,"message":"success"}
-FAIL = {"state":1,"message":"fail"}
+@login_manager.verify_token
+def verify_token(token):
+    # first try to authenticate by token
+    print(token)
+    g.user = None
+    user = User.verify_auth_token(token)
+    if not user:
+        return False
+    g.user = user
+    return True
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.filter_by(id=user_id).first()
+@auth.route('/',methods = ['POST'])
+def new_user():
+    # 用户注册
+    username = request.json.get('username')
+    password = request.json.get('password')
+    if username is None or password is None:
+        # missing arguments
+        return jsonify({'code':00000,'message':'missing arguments'})
+    if User.query.filter_by(username=username).first() is not None:
+        # existing user
+        return jsonify({'code':00000,'message':'existing user'})
+    user = User(username=username)
+    user.hash_password(password)
+    db_session.add(user)
+    db_session.commit()
+    return jsonify({'code':20000,'message':'sucess'})
 
-@auth.route("/")
-def index():
-    return "hello world"
+@auth.route('/login',methods = ['POST'])
+def get_auth_token():
+    # 登录，返回token
+    username = request.json.get('username')
+    password = request.json.get('password')
+    user = User.query.filter_by(username=username).first()
+    if user is not None and user.verify_password(password):
+        g.user = user
+        token = g.user.generate_auth_token(600)
+        return jsonify({'code':20000, 'data':{'token': token.decode('ascii'), 'duration': 600}})
+    return jsonify({'code':60204,'message':'Account and password are incorrect.'})
 
-@auth.route("/is_login")
-@login_required
-def is_login():
-    return SUCCESS
+@auth.route('/info')
+@login_manager.login_required
+def get_user_info():
+    # 用户信息
+    data = {
+        'roles': ['admin'],
+        'introduction': 'I am a super administrator',
+        'avatar': 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
+        'name': g.user.username
+    }
+    return jsonify({'code':20000,'data':data})
 
-@auth.route("/login",methods=["POST"])
-def login():
-    try:
-        # json是否含有字段
-        name = request.json["name"]
-        password = request.json["password"]
-    except:
-        return FAIL
-    user = User.query.filter_by(name=name).first()
-    if user != None and user.verify_password(password):
-        login_user(user)
-        return SUCCESS
-    return FAIL
-
-@auth.route("/logout")
+@auth.route('/logout',methods = ['POST'])
 def logout():
-    logout_user()
-    return SUCCESS
-
-@auth.route("/register",methods=["POST"])
-def register():
-    try:
-        # 请求是否包含json字段
-        # 数据库插入是否成功
-        name = request.json["name"]
-        password = request.json["password"]
-        email = request.json["email"]
-        user = User(name=name,password=password,email=email)
-        db_session.add(user)
-        db_session.commit()
-    except:
-        return FAIL
-    return SUCCESS
+    return jsonify({'code':20000,'message':'success'})

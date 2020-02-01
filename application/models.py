@@ -12,24 +12,35 @@
 from sqlalchemy import Column, Integer, String
 from .database import Base
 from passlib.apps import custom_app_context as pwd_context
+from itsdangerous import (TimedJSONWebSignatureSerializer
+                          as Serializer, BadSignature, SignatureExpired)
+from . import app
 
-from flask_login import UserMixin
-
-class User(Base,UserMixin):
+class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
-    name = Column(String(50), index=True, unique=True)
-    password_hash = Column(String(32), unique=False)
-    email = Column(String(120), unique=True)
+    username = Column(String(32), index=True, unique=True)
+    password_hash = Column(String(64))
 
-    def __init__(self, name=None, password=None, email=None):
-        self.name = name
+    def hash_password(self, password):
         self.password_hash = pwd_context.encrypt(password)
-        self.email = email
 
     def verify_password(self, password):
         return pwd_context.verify(password, self.password_hash)
 
-    def __repr__(self):
-        return '<User %r>' % (self.name)
+    def generate_auth_token(self, expiration=600):
+        s = Serializer(app.config['SECRET_KEY'], expires_in=expiration)
+        return s.dumps({'id': self.id})
+    
+    @staticmethod
+    def verify_auth_token(token):
+        s = Serializer(app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except SignatureExpired:
+            return None    # valid token, but expired
+        except BadSignature:
+            return None    # invalid token
+        user = User.query.get(data['id'])
+        return user
 
