@@ -9,7 +9,7 @@
 """
 
 """
-from flask import Blueprint, request, jsonify, url_for, abort, g
+from flask import Blueprint, request, jsonify, g
 from ..models import User
 from ..database import db_session
 from .. import login_manager
@@ -19,7 +19,6 @@ auth = Blueprint('auth',__name__)
 @login_manager.verify_token
 def verify_token(token):
     # first try to authenticate by token
-    print(token)
     g.user = None
     user = User.verify_auth_token(token)
     if not user:
@@ -52,7 +51,7 @@ def get_auth_token():
     user = User.query.filter_by(username=username).first()
     if user is not None and user.verify_password(password):
         g.user = user
-        token = g.user.generate_auth_token(600)
+        token = g.user.generate_auth_token(3600)
         return jsonify({'code':20000, 'data':{'token': token.decode('ascii'), 'duration': 600}})
     return jsonify({'code':60204,'message':'Account and password are incorrect.'})
 
