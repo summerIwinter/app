@@ -21,17 +21,18 @@ data_manage = Blueprint('data_manage',__name__)
 @login_manager.login_required
 def get_items():
     # 获取所有数据
-    data = {
-        'items':[
-            { 'id': '001', 'name': '数据集名', 'create_time': '2018-12-05 15:59' },
-            { 'id': '002', 'name': '数据集名', 'create_time': '2018-12-05 15:59' },
-            { 'id': '003', 'name': '数据集名', 'create_time': '2018-12-05 15:59' },
-            { 'id': '004', 'name': '数据集名', 'create_time': '2018-12-05 15:59' },
-            { 'id': '005', 'name': '数据集名', 'create_time': '2018-12-05 15:59' },
-            { 'id': '006', 'name': '数据集名', 'create_time': '2018-12-05 15:59' },
-            { 'id': '007', 'name': '数据集名', 'create_time': '2018-12-05 15:59' }
-        ]
-    }
+    user = g.user
+    print(user.datas)
+    print(user.datas[0].id)
+    print(user.datas[0].create_time.strftime('%Y-%m-%d %H:%M'))
+
+    data = { 'items': []}
+    for item in user.datas:
+        data['items'].append({
+            'id':item.id,
+            'name':item.name,
+            'create_time':item.create_time.strftime('%Y-%m-%d %H:%M')
+        })
     return jsonify({'code':20000, 'data':data})
 
 @data_manage.route('/item',methods=['POST'])
