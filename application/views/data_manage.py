@@ -21,13 +21,8 @@ data_manage = Blueprint('data_manage',__name__)
 @login_manager.login_required
 def get_items():
     # 获取所有数据
-    user = g.user
-    print(user.datas)
-    print(user.datas[0].id)
-    print(user.datas[0].create_time.strftime('%Y-%m-%d %H:%M'))
-
     data = { 'items': []}
-    for item in user.datas:
+    for item in g.user.datas:
         data['items'].append({
             'id':item.id,
             'name':item.name,
@@ -60,3 +55,12 @@ def new_item():
     }
     return jsonify({'code':20000, 'data':data})
 
+@data_manage.route('/item',methods=['DELETE'])
+@login_manager.login_required
+def del_item():
+    item_id = request.json.get('id')
+    # 判断请求参数
+    item = Data.query.filter_by(id=item_id).first()
+    g.user.datas.remove(item)
+    db_session.commit()
+    return jsonify({ 'code':20000, 'message': '删除成功' })
