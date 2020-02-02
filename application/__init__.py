@@ -21,7 +21,9 @@ login_manager = HTTPTokenAuth(scheme='token')
 
 # 蓝图
 from .views.auth import auth
+from .views.data_manage import data_manage
 app.register_blueprint(auth,url_prefix='/api/user')
+app.register_blueprint(data_manage,url_prefix='/api/data')
 
 # 数据库接口
 from .database import db_session
