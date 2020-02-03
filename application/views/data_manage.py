@@ -9,10 +9,11 @@
 """
 
 """
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify, g, abort
 from ..models import Data
 from ..database import db_session
 from .. import login_manager
+from ..mongo import Mongodb
 
 data_manage = Blueprint('data_manage',__name__)
 
@@ -41,19 +42,15 @@ def new_item():
     fileId = request.json.get('fileId')
     if not name or not describe or not fileId:
         return jsonify({'code':00000, 'data':data})
-    user = g.user
-    data_path = name + fileId
     # 数据导入mongo
-
+    col = Mongodb(fileId)
+    col.addCollection()
     # 在数据库建立数据存储信息
-    data = Data(name,describe,data_path)
-    user.datas.append(data)
+    data = Data(name,describe,fileId)
+    g.user.datas.append(data)
     db_session.add(data)
     db_session.commit()
-    data = {
-        'item_id': data.id
-    }
-    return jsonify({'code':20000, 'data':data})
+    return jsonify({'code':20000, 'data':{'item_id': data.id}})
 
 @data_manage.route('/item',methods=['DELETE'])
 @login_manager.login_required
@@ -64,3 +61,20 @@ def del_item():
     g.user.datas.remove(item)
     db_session.commit()
     return jsonify({ 'code':20000, 'message': '删除成功' })
+
+@data_manage.route('/item',methods=['GET'])
+@login_manager.login_required
+def get_item():
+    # 检查传入参数
+    item_id = request.args.get('id')
+    if item_id is None:
+        abort(400)
+    item = Data.query.filter_by(id=int(item_id)).first()
+    # 从mongo查询数据
+    col = Mongodb(item.data_path)
+    items = col.getCollection()
+    data = {
+        'items': items
+    }
+    return jsonify({ 'code':20000, 'data':data })
+
