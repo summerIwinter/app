@@ -13,7 +13,11 @@ from flask import Flask
 import os
 
 app = Flask(__name__)
+
+# 一些配置
 app.config["SECRET_KEY"] = os.urandom(24)
+app.config["DATABASE_URI"] = "sqlite:///./data/aidata/test.db"
+app.config["FILE_UPDATE_PATH"] = "./data/aidata/"
 
 # 登录
 from flask_httpauth import HTTPTokenAuth

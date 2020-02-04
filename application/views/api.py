@@ -11,7 +11,7 @@
 """
 from flask import Blueprint, request, jsonify, g
 import uuid
-
+from .. import app
 api = Blueprint('api',__name__)
 
 
@@ -20,6 +20,6 @@ def upload():
     file = request.files['file']
     if file and file.filename[-4:]=='.csv':
         file_id = str(uuid.uuid4())
-        file.save('/tmp/aidata/'+file_id+'.csv')
+        file.save(app.config["FILE_UPDATE_PATH"]+file_id+'.csv')
         return jsonify({'code':20000,'data':{'file_id':file_id}})
     return jsonify({'code':00000,'message':'error'})

@@ -16,7 +16,7 @@ from application.database import init_db
 
 from application.models import User
 import os
-if not os.path.exists('/tmp/aidata/test.db'):
+if not os.path.exists('./data/aidata/test.db'):
     init_db()
     user =User(username='admin')
     user.hash_password('password')

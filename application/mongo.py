@@ -12,6 +12,7 @@
 from pymongo import MongoClient 
 import csv
 from concurrent.futures import ThreadPoolExecutor
+from . import app
 class Mongodb:
     client = MongoClient('localhost', 27017)
     db = client['aidata']
@@ -23,7 +24,7 @@ class Mongodb:
     def addCollection(self):
         # 从csv文件导入数据
         def _addCollection():
-            csv_path = '/tmp/aidata/'+self.collection_name+'.csv'
+            csv_path = app.config["FILE_UPDATE_PATH"]+self.collection_name+'.csv'
             self.col.delete_many({})
             with open(csv_path,'r') as fp:
                 reader = csv.DictReader(fp)
@@ -31,7 +32,6 @@ class Mongodb:
                 for each in reader:
                     counts+=1
                     self.col.insert_one(each)
-                    print(each)
                 return counts
         # _addCollection()
         Mongodb.executor.submit(_addCollection)
