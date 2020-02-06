@@ -10,6 +10,7 @@
 
 """
 from pymongo import MongoClient 
+from bson import ObjectId
 import csv
 from concurrent.futures import ThreadPoolExecutor
 from . import app
@@ -43,3 +44,13 @@ class Mongodb:
             d['_id'] = str(d['_id'])
             data.append(d)
         return data
+
+    def delRow(self,_id):
+        print(_id)
+        print("删除一条数据")
+        pass
+    
+    def updateRow(self,row):
+        _id = ObjectId(row.pop('_id'))
+        
+        self.col.update_one({'_id':_id},{'$set':row})

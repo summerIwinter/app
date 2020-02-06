@@ -78,3 +78,27 @@ def get_item():
     }
     return jsonify({ 'code':20000, 'data':data })
 
+@data_manage.route('/item/row',methods=['DELETE'])
+@login_manager.login_required
+def del_item_row():
+    item_id = request.json.get('item_id')
+    row_id = request.json.get('row_id')
+    if item_id is None or row_id is None:
+        abort(400)
+    item = Data.query.filter_by(id=int(item_id)).first()
+    col = Mongodb(item.data_path)
+    col.delRow(row_id)
+    return jsonify({ 'code':20000, 'message':"success" })
+
+
+@data_manage.route('/item/row',methods=['PUT'])
+@login_manager.login_required
+def update_item_row():
+    item_id = request.json.get('item_id')
+    row = request.json.get('row')
+    if item_id is None or row is None:
+        abort(400)
+    item = Data.query.filter_by(id=int(item_id)).first()
+    col = Mongodb(item.data_path)
+    col.updateRow(row)
+    return jsonify({ 'code':20000, 'message':"success" })
